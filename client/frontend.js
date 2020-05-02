@@ -41,6 +41,7 @@ new Vue({
         },
         async markContact(id) {
             const contact = this.contacts.find(c => c.id === id);
+            console.log(id);
             const update = await request(`/api/contacts/${id}`,'PUT', {
                 ...contact,
                 marked: true
