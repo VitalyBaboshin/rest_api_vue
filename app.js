@@ -1,40 +1,23 @@
-
-
-const firebase = require('firebase');
-const express  = require('express');
 const path = require('path');
 const {v4} = require('uuid');
+
+// Подключение Express
+const express  = require('express');
+// Создаем объект приложения
 const app = express();
 
+const firebase = require('firebase');
 const admin = require("firebase-admin");
 const serviceAccount = require("./rest-api-e90ff-firebase-adminsdk.json");
 admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount),
-    databaseURL: "https://rest-api-e90ff.firebaseio.com"
+    credential: admin.credential.cert(serviceAccount)
 });
+const db = admin.firestore();
+let docRef = db.collection('contacts');
 
-firebase.initializeApp({
-    apiKey: "AIzaSyBLzWbOte_9Qc5ZBDlhhwe6mERXLpisKX4",
-    authDomain: "rest-api-e90ff.firebaseapp.com",
-    databaseURL: "https://rest-api-e90ff.firebaseio.com",
-    projectId: "rest-api-e90ff",
-    storageBucket: "rest-api-e90ff.appspot.com",
-    messagingSenderId: "163106349618",
-    appId: "1:163106349618:web:10daacb29460da6f5b522b"
-});
-
-const db = firebase.database();
-const usersRef = db.ref("contacts");
-
-// var authData = ref.getAuth();
-//
-// if (authData) {
-//     console.log("Authenticated user with uid:", authData.uid);
-// }
-
-let CONTACTS = [
-    {id: v4(), name: 'Виталий', value: '+7-911-033-10-10', marked: false}
-];
+// let CONTACTS = [
+//     {id: v4(), name: 'Виталий', value: '+7-911-033-10-10', marked: false}
+// ];
 
 app.use(express.json());
 
@@ -43,21 +26,24 @@ app.use(express.json());
 // });
 
 app.get('/api/contacts', (req, res) => {
-    usersRef.once("value", function(snapshot) {
-        //console.log(snapshot);
-        if (snapshot.val() == null) {
-            res.json({message: "Error: No user found", "result": false});
-        } else {
-            res.status(200).json({"message":"successfully fetch data", "result": true, "data": snapshot.val()});
-        }
-    });
-
+    let CONTs = [];
+    docRef.get()
+        .then((snapshot) => {
+            snapshot.forEach((doc) => {
+                // console.log(doc.id, '=>', doc.data());
+                CONTs.push(doc.data());
+            });
+            res.status(200).json(CONTs);
+        })
+        .catch((err) => {
+            console.log('Error getting documents', err);
+            res.status(520).json(CONTs)
+        });
 });
 
-
 app.post('/api/contacts', (req,res) => {
-    const contact = {...req.body, id: v4(), marked: true};
-    CONTACTS.push(contact);
+    const contact = {...req.body, id: v4(), marked: false};
+    docRef.doc(`${contact.id}`).set(contact);
     res.status(201).json(contact)
 });
 
@@ -67,17 +53,21 @@ app.get('*', (req, res) => {
     res.sendFile(path.resolve(__dirname, 'client', 'index.html'))
 });
 
+// PUT
+app.put('/api/contacts/:id', (req, res) => {
+    docRef.doc(`${req.params.id}`).set(req.body);
+    // const idx = CONTACTS.findIndex(c => c.id === req.params.id);
+    // CONTACTS[idx] = req.body;
+    res.status(202).json(req.body)
+});
+
 // DELETE
 app.delete('/api/contacts/:id', (req, res) => {
-    ref = CONTACTS.filter(c => c.id !== req.params.id);
+    // docRef.get()
+    docRef.doc(`${req.params.id}`).delete();
+    // CONTACTS = CONTACTS.filter(c => c.id !== req.params.id);
     res.status(200).json({message: 'Контакт был удален'})
 });
 
-// PUT
-app.put('/api/contacts/:id', (req, res) => {
-    const idx = CONTACTS.findIndex(c => c.id === req.params.id);
-    CONTACTS[idx] = req.body;
-    res.json(CONTACTS[idx])
-});
 
 app.listen(3000, () => console.log('Server has been started on port 3000...'));
