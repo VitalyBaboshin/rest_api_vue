@@ -1,4 +1,4 @@
-import Vue from 'https://cdn.jsdelivr.net/npm/vue@2.6.11/dist/vue.esm.browser.js'
+﻿import Vue from 'https://cdn.jsdelivr.net/npm/vue@2.6.11/dist/vue.esm.browser.js'
 
 
 Vue.component('loader', {
@@ -36,7 +36,7 @@ new Vue({
             const newContact = await request('/api/contacts', 'POST', contact);
 
             this.contacts.push(newContact);
-            //
+            // //
             this.form.name = this.form.value = ''
         },
         async markContact(id) {
